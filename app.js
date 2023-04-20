@@ -14,6 +14,18 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
+
+
+//app.use() 모든요청에 실행됨
+//next 다음 미들웨어로 넘어가는 함수.
+app.use(
+    (req, res, next) =>{
+      console.log("모든요청에서 실행됩니다.");
+      next();
+    }
+);
+
+
 //app.use 미들웨어 , 요청과응답의 중간
 app.use(logger('dev'));
 app.use(express.json());
@@ -40,6 +52,8 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+
+//app.get('url',()) url+get 요청일 경우 실행됨
 app.get('/hello', (req, res) => {
   res.send('Hello, Express');
 });
