@@ -8,7 +8,7 @@ const path = require('path');
 //코드에서 사용되는 중요한 정보를 소스코드에 하드코딩하지않고 외부파일에 저장한다.
 //보안성과 유지보수를 용이하게 하기 위함
 // const dotenv = require('dotenv');
-const logger = require('morgan');
+const morgan = require('morgan');
 
 //요청의 본문에 있는 데이터를 해석해 req.body 객체로 만들어주는 미들웨어
 //보통 ajax 데이터를 처리하나 멀티파트 데이터를 처리하진 못한다.
@@ -18,20 +18,18 @@ const logger = require('morgan');
 const nunjucks = require('nunjucks');
 
 const { sequelize } = require('./models');
-// const indexRouter = require('./routes');
-// const usersRouter = require('./routes/users');
 
-
-
+const indexRouter = require('./routes');
+const usersRouter = require('./routes/users');
+const commentsRouter = require('./routes/comments');
 
 // dotenv.config();
 
 
 //익스프레스 내부에 http module이 내장되어있어 서버역할을 함.
-var app = express();
+const app = express();
 
-app.set('port', process.env.PORT || "3001");
-
+app.set('port', process.env.PORT || "3002");
 
 // view engine setup
 // app.set('views', path.join(__dirname, 'views'));
@@ -60,10 +58,6 @@ sequelize.sync({force:false})
         }
     );
 
-
-
-
-
 //app.use 미들웨어
 //app.use() 모든요청에 실행됨
 //next 다음 미들웨어로 넘어가는 함수.
@@ -81,7 +75,12 @@ sequelize.sync({force:false})
 
 //dev외에도 combined, common, short, tiny
 //개발환경에서는 dev, 배포환경에서는 combined를 사용한다.
-app.use(logger('dev'));
+app.use(morgan('dev'));
+
+//static 미들웨어
+//정적인 파일들을 제공하는 라우터 역할
+//public 폴더안의 파일들을 사용할 수 있다.
+app.use(express.static(path.join(__dirname, 'public')));
 
 //json 형태의 데이터 전달방식
 app.use(express.json());
@@ -94,13 +93,10 @@ app.use(express.urlencoded({ extended: false }));
 
 // app.use(cookieParser());
 
-//static 미들웨어
-//정적인 파일들을 제공하는 라우터 역할
-//public 폴더안의 파일들을 사용할 수 있다.
-app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use('/', indexRouter);
-// app.use('/users', usersRouter);
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+app.use('/comments', commentsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -115,7 +111,7 @@ app.use(function(req, res, next) {
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = process.env.NODE_ENV !== 'production' ? err : {};
 
   // 직접연결하지않아도 express가 자동지정하나, 실무에서는 직접처리하는것이 좋다.
   res.status(err.status || 500); //http 상태코드 지정
@@ -124,9 +120,9 @@ app.use(function(err, req, res, next) {
 
 
 //app.get('url',()) url+get 요청일 경우 실행됨
-app.get('/hello', (req, res) => {
-  res.send('Hello, Express');
-});
+// app.get('/hello', (req, res) => {
+//   res.send('Hello, Express');
+// });
 
 app.listen(app.get('port'), () =>{
   console.log(app.get('port'), '번 포트에서 대기중');
